@@ -57,4 +57,60 @@ public class StudentController {
         studentService.markNotificationsRead(principal.getName());
         return ResponseEntity.ok(ApiResponse.ok("Notifications marked as read"));
     }
+
+
+        // Save internship
+    @PostMapping("/save/{internshipId}")
+    public ResponseEntity<ApiResponse> saveInternship(@PathVariable Long internshipId, Authentication auth) {
+        studentService.saveInternship(auth.getName(), internshipId);
+        return ResponseEntity.ok(ApiResponse.ok("Internship saved"));
+    }
+
+    // Get saved internships
+    @GetMapping("/saved")
+    public ResponseEntity<ApiResponse> getSavedInternships(Authentication auth) {
+        return ResponseEntity.ok(ApiResponse.ok("Saved internships", studentService.getSavedInternships(auth.getName())));
+    }
+
+    // Withdraw application
+    @DeleteMapping("/applications/{applicationId}/withdraw")
+    public ResponseEntity<ApiResponse> withdrawApplication(@PathVariable Long applicationId, Authentication auth) {
+        studentService.withdrawApplication(auth.getName(), applicationId);
+        return ResponseEntity.ok(ApiResponse.ok("Application withdrawn"));
+    }
+
+    // Forgot password - request
+    @PostMapping("/forgot-password")
+    public ResponseEntity<ApiResponse> forgotPassword(@RequestBody Map<String, String> body) {
+        studentService.forgotPassword(body.get("email"));
+        return ResponseEntity.ok(ApiResponse.ok("Reset link sent if email exists"));
+    }
+
+    @PostMapping("/save/{internshipId}")
+    public ResponseEntity<ApiResponse> saveInternship(
+            @PathVariable Long internshipId, Authentication auth) {
+        studentService.saveInternship(auth.getName(), internshipId);
+        return ResponseEntity.ok(ApiResponse.ok("Internship saved"));
+    }
+
+    @DeleteMapping("/save/{internshipId}")
+    public ResponseEntity<ApiResponse> unsaveInternship(
+            @PathVariable Long internshipId, Authentication auth) {
+        studentService.unsaveInternship(auth.getName(), internshipId);
+        return ResponseEntity.ok(ApiResponse.ok("Internship removed from saved"));
+    }
+
+    @GetMapping("/saved")
+    public ResponseEntity<ApiResponse> getSavedInternships(Authentication auth) {
+        return ResponseEntity.ok(ApiResponse.ok("Saved internships",
+            studentService.getSavedInternships(auth.getName())));
+    }
+
+    @DeleteMapping("/applications/{applicationId}/withdraw")
+    public ResponseEntity<ApiResponse> withdrawApplication(
+            @PathVariable Long applicationId, Authentication auth) {
+        studentService.withdrawApplication(auth.getName(), applicationId);
+        return ResponseEntity.ok(ApiResponse.ok("Application withdrawn"));
+    }
+
 }

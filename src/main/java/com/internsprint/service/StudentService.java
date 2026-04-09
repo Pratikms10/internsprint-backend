@@ -6,6 +6,7 @@ import com.internsprint.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.internsprint.repository.SavedInternshipRepository;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -19,6 +20,7 @@ public class StudentService {
     private final InternshipRepository internshipRepository;
     private final ApplicationRepository applicationRepository;
     private final NotificationRepository notificationRepository;
+    private final SavedInternshipRepository savedInternshipRepository;
 
     public StudentProfileResponse getProfile(String email) {
         User user = findUser(email);
@@ -141,5 +143,49 @@ public class StudentService {
                 a.getAppliedAt(),
                 a.getUpdatedAt()
         );
+    }
+        // Save internship
+    public void saveInternship(String email, Long internshipId) {
+        User user = userRepository.findByEmail(email)
+            .orElseThrow(() -> new RuntimeException("User not found"));
+        Internship internship = internshipRepository.findById(internshipId)
+            .orElseThrow(() -> new RuntimeException("Internship not found"));
+        if (!savedInternshipRepository.existsByStudentAndInternship(user, internship)) {
+            SavedInternship saved = new SavedInternship();
+            saved.setStudent(user);
+            saved.setInternship(internship);
+            savedInternshipRepository.save(saved);
+        }
+    }
+
+    // Unsave internship
+    public void unsaveInternship(String email, Long internshipId) {
+        User user = userRepository.findByEmail(email)
+            .orElseThrow(() -> new RuntimeException("User not found"));
+        Internship internship = internshipRepository.findById(internshipId)
+            .orElseThrow(() -> new RuntimeException("Internship not found"));
+        savedInternshipRepository.deleteByStudentAndInternship(user, internship);
+    }
+
+    // Get saved internships
+    public List<InternshipResponse> getSavedInternships(String email) {
+        User user = userRepository.findByEmail(email)
+            .orElseThrow(() -> new RuntimeException("User not found"));
+        return savedInternshipRepository.findByStudent(user)
+            .stream()
+            .map(s -> InternshipResponse.from(s.getInternship()))
+            .collect(Collectors.toList());
+    }
+
+    // Withdraw application
+    public void withdrawApplication(String email, Long applicationId) {
+        User user = userRepository.findByEmail(email)
+            .orElseThrow(() -> new RuntimeException("User not found"));
+        Application application = applicationRepository.findById(applicationId)
+            .orElseThrow(() -> new RuntimeException("Application not found"));
+        if (!application.getStudent().getId().equals(user.getId())) {
+            throw new RuntimeException("Unauthorized");
+        }
+        applicationRepository.delete(application);
     }
 }
