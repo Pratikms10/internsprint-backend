@@ -20,10 +20,10 @@ public class CompanyService {
     private final InternshipRepository internshipRepository;
     private final ApplicationRepository applicationRepository;
     private final NotificationRepository notificationRepository;
+    private final EmailService emailService;
 
     @Transactional
-    public InternshipResponse postInternship(String email,
-                                             InternshipRequest request) {
+    public InternshipResponse postInternship(String email, InternshipRequest request) {
         Company company = findCompany(email);
 
         if (!company.getIsVerified()) {
@@ -70,8 +70,7 @@ public class CompanyService {
         return toInternshipResponse(internship);
     }
 
-    public List<ApplicationResponse> getApplications(String email,
-                                                     Long internshipId) {
+    public List<ApplicationResponse> getApplications(String email, Long internshipId) {
         Company company = findCompany(email);
         Internship internship = internshipRepository.findById(internshipId)
                 .orElseThrow(() -> new RuntimeException("Internship not found"));
@@ -94,14 +93,28 @@ public class CompanyService {
         Application application = applicationRepository.findById(applicationId)
                 .orElseThrow(() -> new RuntimeException("Application not found"));
 
-        if (!application.getInternship().getCompany().getId()
-                .equals(company.getId())) {
+        if (!application.getInternship().getCompany().getId().equals(company.getId())) {
             throw new RuntimeException("Access denied");
         }
 
         application.setStatus(Application.AppStatus.valueOf(newStatus));
         applicationRepository.save(application);
 
+        // Send email notification to student
+        try {
+            User student = application.getStudent();
+            Internship internship = application.getInternship();
+            emailService.sendApplicationStatusEmail(
+                    student.getEmail(),
+                    student.getName(),
+                    internship.getTitle(),
+                    newStatus
+            );
+        } catch (Exception e) {
+            System.out.println("Email notification failed: " + e.getMessage());
+        }
+
+        // Save in-app notification
         Notification n = new Notification();
         n.setUser(application.getStudent());
         n.setMessage("Your application for "
@@ -122,14 +135,25 @@ public class CompanyService {
         Application application = applicationRepository.findById(applicationId)
                 .orElseThrow(() -> new RuntimeException("Application not found"));
 
-        if (!application.getInternship().getCompany().getId()
-                .equals(company.getId())) {
+        if (!application.getInternship().getCompany().getId().equals(company.getId())) {
             throw new RuntimeException("Access denied");
         }
 
         application.setInterviewDate(interviewDate);
         application.setStatus(Application.AppStatus.interview_scheduled);
         applicationRepository.save(application);
+
+        // Send email notification
+        try {
+            emailService.sendApplicationStatusEmail(
+                    application.getStudent().getEmail(),
+                    application.getStudent().getName(),
+                    application.getInternship().getTitle(),
+                    "interview_scheduled"
+            );
+        } catch (Exception e) {
+            System.out.println("Interview email failed: " + e.getMessage());
+        }
 
         Notification n = new Notification();
         n.setUser(application.getStudent());
