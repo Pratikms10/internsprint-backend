@@ -6,7 +6,6 @@ import com.internsprint.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import com.internsprint.repository.SavedInternshipRepository;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -47,6 +46,9 @@ public class StudentService {
         profile.setLinkedin(request.getLinkedin());
         profile.setGithub(request.getGithub());
         profile.setResumeUrl(request.getResumeUrl());
+        profile.setProjects(request.getProjects());
+    profile.setCertifications(request.getCertifications());
+
         studentProfileRepository.save(profile);
 
         return toProfileResponse(user, profile);
@@ -187,5 +189,14 @@ public class StudentService {
             throw new RuntimeException("Unauthorized");
         }
         applicationRepository.delete(application);
+    }
+
+    public void updateResumeUrl(String email, String url) {
+        User user = userRepository.findByEmail(email)
+            .orElseThrow(() -> new RuntimeException("User not found"));
+        StudentProfile profile = studentProfileRepository.findByUserId(user.getId())
+            .orElseThrow(() -> new RuntimeException("Profile not found"));
+        profile.setResumeUrl(url);
+        studentProfileRepository.save(profile);
     }
 }

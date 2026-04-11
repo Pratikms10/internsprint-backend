@@ -1,13 +1,16 @@
 package com.internsprint.controller;
 
 import com.internsprint.dto.*;
+import com.internsprint.service.CloudinaryService;
 import com.internsprint.service.StudentService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.security.Principal;
+
 
 @RestController
 @RequestMapping("/api/student")
@@ -16,6 +19,7 @@ import java.security.Principal;
 public class StudentController {
 
     private final StudentService studentService;
+    private final CloudinaryService cloudinaryService;
 
     @GetMapping("/profile")
     public ResponseEntity<ApiResponse> getProfile(Principal principal) {
@@ -113,4 +117,18 @@ public class StudentController {
         return ResponseEntity.ok(ApiResponse.ok("Application withdrawn"));
     }
 
+
+    @PostMapping("/resume/upload")
+    public ResponseEntity<ApiResponse> uploadResume(
+            @RequestParam("file") MultipartFile file,
+            Authentication auth) {
+        try {
+            String url = cloudinaryService.uploadResume(file);
+            // Save URL to profile
+            studentService.updateResumeUrl(auth.getName(), url);
+            return ResponseEntity.ok(ApiResponse.ok("Resume uploaded", url));
+        } catch (Exception e) {
+            return ResponseEntity.ok(ApiResponse.fail("Upload failed: " + e.getMessage()));
+        }
+    }
 }
