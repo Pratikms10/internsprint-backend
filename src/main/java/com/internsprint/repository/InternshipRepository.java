@@ -18,6 +18,9 @@ public interface InternshipRepository extends JpaRepository<Internship, Long> {
     List<Internship> findByStatusAndLocationContainingIgnoreCase(
             Internship.Status status, String location);
 
+    List<Internship> findByStatusAndDeadlineBetween(
+            Internship.Status status, String startDate, String endDate);
+
     List<Internship> findByCompanyId(Long companyId);
 
     @Query("SELECT i FROM Internship i WHERE i.status = 'open' AND " +

@@ -65,4 +65,20 @@ public class EmailService {
         );
         mailSender.send(message);
     }
+
+    public void sendDeadlineReminderEmail(String toEmail, String name,
+            String internshipTitle, String deadline) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setFrom(fromEmail);
+        message.setTo(toEmail);
+        message.setSubject("InternSprint - Application Deadline Reminder: " + internshipTitle);
+        message.setText(
+            "Hi " + name + ",\n\n" +
+            "This is a reminder that the application deadline for \"" + internshipTitle + "\" is approaching.\n\n" +
+            "Deadline: " + deadline + "\n\n" +
+            "Don't miss out! View internship: " + frontendUrl + "/student/browse\n\n" +
+            "— InternSprint Team"
+        );
+        mailSender.send(message);
+    }
 }
