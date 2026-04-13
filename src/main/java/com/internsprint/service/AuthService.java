@@ -92,7 +92,14 @@ public class AuthService {
         user.setResetTokenExpiry(LocalDateTime.now().plusHours(1));
         userRepository.save(user);
 
-        emailService.sendPasswordResetEmail(email, token);
+        try {
+            emailService.sendPasswordResetEmail(email, token);
+        } catch (Exception e) {
+            // Log the full error so we can see it in Render logs
+            System.err.println("EMAIL ERROR: " + e.getClass().getName() + " - " + e.getMessage());
+            e.printStackTrace();
+            throw new RuntimeException("Email sending failed: " + e.getMessage());
+        }
     }
 
     public void resetPassword(String token, String newPassword) {

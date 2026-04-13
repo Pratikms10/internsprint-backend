@@ -43,10 +43,9 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(RuntimeException.class)
-    public ResponseEntity<ApiResponse> handleRuntimeException(
-            RuntimeException ex) {
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(ApiResponse.fail(ex.getMessage()));
+    public ResponseEntity<ApiResponse> handleRuntime(RuntimeException ex) {
+        System.err.println("RUNTIME ERROR: " + ex.getMessage());
+        return ResponseEntity.badRequest().body(ApiResponse.fail(ex.getMessage()));
     }
 
     @ExceptionHandler(Exception.class)
