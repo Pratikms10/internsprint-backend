@@ -1,84 +1,87 @@
 package com.internsprint.service;
 
-import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.mail.SimpleMailMessage;
-import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.http.*;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+
+import java.util.Map;
 
 @Service
-@RequiredArgsConstructor
 public class EmailService {
 
-    private final JavaMailSender mailSender;
-
-    @Value("${app.from.email}")
-    private String fromEmail;
+    @Value("${resend.api.key}")
+    private String apiKey;
 
     @Value("${app.frontend.url}")
     private String frontendUrl;
 
-    public void sendPasswordResetEmail(String toEmail, String token) {
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setFrom(fromEmail);
-        message.setTo(toEmail);
-        message.setSubject("InternSprint - Reset Your Password");
-        message.setText(
-            "Hi,\n\n" +
-            "You requested a password reset for your InternSprint account.\n\n" +
-            "Click the link below to reset your password:\n" +
-            frontendUrl + "/reset-password?token=" + token + "\n\n" +
-            "This link expires in 1 hour.\n\n" +
-            "If you didn't request this, please ignore this email.\n\n" +
-            "— InternSprint Team"
+    @Value("${app.from.email}")
+    private String fromEmail;
+
+    private final RestTemplate restTemplate = new RestTemplate();
+
+    private void sendEmail(String to, String subject, String html) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.set("Authorization", "Bearer " + apiKey);
+
+        Map<String, Object> body = Map.of(
+            "from", fromEmail,
+            "to", new String[]{to},
+            "subject", subject,
+            "html", html
         );
-        mailSender.send(message);
+
+        HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
+
+        try {
+            ResponseEntity<String> response = restTemplate.postForEntity(
+                "https://api.resend.com/emails", request, String.class
+            );
+            System.out.println("Email sent: " + response.getStatusCode());
+        } catch (Exception e) {
+            System.err.println("Email failed: " + e.getMessage());
+            throw new RuntimeException("Failed to send email: " + e.getMessage());
+        }
+    }
+
+    public void sendPasswordResetEmail(String toEmail, String token) {
+        String resetLink = frontendUrl + "/reset-password?token=" + token;
+        sendEmail(toEmail, "InternSprint - Reset Your Password",
+            "<h2>Reset Your Password</h2>" +
+            "<p>Click the link below to reset your password:</p>" +
+            "<a href='" + resetLink + "' style='background:#3b82f6;color:white;padding:12px 24px;border-radius:8px;text-decoration:none;display:inline-block;'>Reset Password</a>" +
+            "<p>This link expires in 1 hour.</p>" +
+            "<p>If you didn't request this, ignore this email.</p>"
+        );
     }
 
     public void sendWelcomeEmail(String toEmail, String name) {
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setFrom(fromEmail);
-        message.setTo(toEmail);
-        message.setSubject("Welcome to InternSprint!");
-        message.setText(
-            "Hi " + name + ",\n\n" +
-            "Welcome to InternSprint! 🚀\n\n" +
-            "Your account has been created successfully.\n" +
-            "Start exploring internships at: " + frontendUrl + "\n\n" +
-            "— InternSprint Team"
+        sendEmail(toEmail, "Welcome to InternSprint!",
+            "<h2>Welcome, " + name + "! 🚀</h2>" +
+            "<p>Your InternSprint account has been created successfully.</p>" +
+            "<a href='" + frontendUrl + "' style='background:#3b82f6;color:white;padding:12px 24px;border-radius:8px;text-decoration:none;display:inline-block;'>Start Exploring</a>"
         );
-        mailSender.send(message);
     }
 
     public void sendApplicationStatusEmail(String toEmail, String name,
             String internshipTitle, String status) {
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setFrom(fromEmail);
-        message.setTo(toEmail);
-        message.setSubject("InternSprint - Application Update: " + internshipTitle);
-        message.setText(
-            "Hi " + name + ",\n\n" +
-            "Your application for \"" + internshipTitle + "\" has been updated.\n\n" +
-            "New Status: " + status.replace("_", " ").toUpperCase() + "\n\n" +
-            "View your applications: " + frontendUrl + "/student/applications\n\n" +
-            "— InternSprint Team"
+        sendEmail(toEmail, "Application Update: " + internshipTitle,
+            "<h2>Hi " + name + ",</h2>" +
+            "<p>Your application for <strong>" + internshipTitle + "</strong> has been updated.</p>" +
+            "<p>New Status: <strong>" + status.replace("_", " ").toUpperCase() + "</strong></p>" +
+            "<a href='" + frontendUrl + "/student/applications' style='background:#3b82f6;color:white;padding:12px 24px;border-radius:8px;text-decoration:none;display:inline-block;'>View Applications</a>"
         );
-        mailSender.send(message);
     }
 
     public void sendDeadlineReminderEmail(String toEmail, String name,
             String internshipTitle, String deadline) {
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setFrom(fromEmail);
-        message.setTo(toEmail);
-        message.setSubject("InternSprint - Application Deadline Reminder: " + internshipTitle);
-        message.setText(
-            "Hi " + name + ",\n\n" +
-            "This is a reminder that the application deadline for \"" + internshipTitle + "\" is approaching.\n\n" +
-            "Deadline: " + deadline + "\n\n" +
-            "Don't miss out! View internship: " + frontendUrl + "/student/browse\n\n" +
-            "— InternSprint Team"
+        sendEmail(toEmail, "Deadline Reminder: " + internshipTitle,
+            "<h2>Hi " + name + ",</h2>" +
+            "<p>The deadline for <strong>" + internshipTitle + "</strong> is approaching.</p>" +
+            "<p>Deadline: <strong>" + deadline + "</strong></p>" +
+            "<a href='" + frontendUrl + "/student/browse' style='background:#3b82f6;color:white;padding:12px 24px;border-radius:8px;text-decoration:none;display:inline-block;'>View Internship</a>"
         );
-        mailSender.send(message);
     }
 }
