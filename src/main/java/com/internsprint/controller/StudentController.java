@@ -3,15 +3,15 @@ package com.internsprint.controller;
 import com.internsprint.dto.ApiResponse;
 import com.internsprint.dto.ApplicationRequest;
 import com.internsprint.dto.StudentProfileRequest;
-import com.internsprint.service.StudentService;
 import com.internsprint.service.CloudinaryService;
-import jakarta.validation.Valid;
+import com.internsprint.service.StudentService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import java.util.Map;
+import java.security.Principal;
 
 @RestController
 @RequestMapping("/api/student")
@@ -63,34 +63,6 @@ public class StudentController {
         return ResponseEntity.ok(ApiResponse.ok("Notifications marked as read"));
     }
 
-
-        // Save internship
-    @PostMapping("/save/{internshipId}")
-    public ResponseEntity<ApiResponse> saveInternship(@PathVariable Long internshipId, Authentication auth) {
-        studentService.saveInternship(auth.getName(), internshipId);
-        return ResponseEntity.ok(ApiResponse.ok("Internship saved"));
-    }
-
-    // Get saved internships
-    @GetMapping("/saved")
-    public ResponseEntity<ApiResponse> getSavedInternships(Authentication auth) {
-        return ResponseEntity.ok(ApiResponse.ok("Saved internships", studentService.getSavedInternships(auth.getName())));
-    }
-
-    // Withdraw application
-    @DeleteMapping("/applications/{applicationId}/withdraw")
-    public ResponseEntity<ApiResponse> withdrawApplication(@PathVariable Long applicationId, Authentication auth) {
-        studentService.withdrawApplication(auth.getName(), applicationId);
-        return ResponseEntity.ok(ApiResponse.ok("Application withdrawn"));
-    }
-
-    // Forgot password - request
-    @PostMapping("/forgot-password")
-    public ResponseEntity<ApiResponse> forgotPassword(@RequestBody Map<String, String> body) {
-        studentService.forgotPassword(body.get("email"));
-        return ResponseEntity.ok(ApiResponse.ok("Reset link sent if email exists"));
-    }
-
     @PostMapping("/save/{internshipId}")
     public ResponseEntity<ApiResponse> saveInternship(
             @PathVariable Long internshipId, Authentication auth) {
@@ -108,7 +80,7 @@ public class StudentController {
     @GetMapping("/saved")
     public ResponseEntity<ApiResponse> getSavedInternships(Authentication auth) {
         return ResponseEntity.ok(ApiResponse.ok("Saved internships",
-            studentService.getSavedInternships(auth.getName())));
+                studentService.getSavedInternships(auth.getName())));
     }
 
     @DeleteMapping("/applications/{applicationId}/withdraw")
@@ -118,14 +90,12 @@ public class StudentController {
         return ResponseEntity.ok(ApiResponse.ok("Application withdrawn"));
     }
 
-
     @PostMapping("/resume/upload")
     public ResponseEntity<ApiResponse> uploadResume(
             @RequestParam("file") MultipartFile file,
             Authentication auth) {
         try {
             String url = cloudinaryService.uploadResume(file);
-            // Save URL to profile
             studentService.updateResumeUrl(auth.getName(), url);
             return ResponseEntity.ok(ApiResponse.ok("Resume uploaded", url));
         } catch (Exception e) {

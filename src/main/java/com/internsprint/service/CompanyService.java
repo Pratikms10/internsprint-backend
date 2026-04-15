@@ -24,7 +24,10 @@ public class CompanyService {
 
     @Transactional
     public InternshipResponse postInternship(String email, InternshipRequest request) {
-        Company company = findCompany(email);
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        Company company = companyRepository.findByUserId(user.getId())
+                .orElseThrow(() -> new RuntimeException("Company not found"));
 
         if (!company.getIsVerified()) {
             throw new RuntimeException(
@@ -41,14 +44,22 @@ public class CompanyService {
         internship.setDescription(request.getDescription());
         internship.setStipend(request.getStipend());
         internship.setDuration(request.getDuration());
-        internship.setDeadline(request.getDeadline());
+        if (request.getDeadline() != null && !request.getDeadline().isBlank()) {
+            try {
+                internship.setDeadline(java.time.LocalDate.parse(request.getDeadline()));
+            } catch (Exception e) {
+                // ignore invalid date
+            }
+        }
         internship = internshipRepository.save(internship);
-
         return toInternshipResponse(internship);
     }
 
     public List<InternshipResponse> getMyInternships(String email) {
-        Company company = findCompany(email);
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        Company company = companyRepository.findByUserId(user.getId())
+                .orElseThrow(() -> new RuntimeException("Company not found"));
         return internshipRepository.findByCompanyId(company.getId())
                 .stream()
                 .map(this::toInternshipResponse)
@@ -57,7 +68,10 @@ public class CompanyService {
 
     @Transactional
     public InternshipResponse closeInternship(String email, Long internshipId) {
-        Company company = findCompany(email);
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        Company company = companyRepository.findByUserId(user.getId())
+                .orElseThrow(() -> new RuntimeException("Company not found"));
         Internship internship = internshipRepository.findById(internshipId)
                 .orElseThrow(() -> new RuntimeException("Internship not found"));
 
@@ -71,7 +85,10 @@ public class CompanyService {
     }
 
     public List<ApplicationResponse> getApplications(String email, Long internshipId) {
-        Company company = findCompany(email);
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        Company company = companyRepository.findByUserId(user.getId())
+                .orElseThrow(() -> new RuntimeException("Company not found"));
         Internship internship = internshipRepository.findById(internshipId)
                 .orElseThrow(() -> new RuntimeException("Internship not found"));
 
@@ -89,7 +106,10 @@ public class CompanyService {
     public ApplicationResponse updateApplicationStatus(String email,
                                                        Long applicationId,
                                                        String newStatus) {
-        Company company = findCompany(email);
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        Company company = companyRepository.findByUserId(user.getId())
+                .orElseThrow(() -> new RuntimeException("Company not found"));
         Application application = applicationRepository.findById(applicationId)
                 .orElseThrow(() -> new RuntimeException("Application not found"));
 
@@ -100,7 +120,6 @@ public class CompanyService {
         application.setStatus(Application.AppStatus.valueOf(newStatus));
         applicationRepository.save(application);
 
-        // Send email notification to student
         try {
             User student = application.getStudent();
             Internship internship = application.getInternship();
@@ -114,7 +133,6 @@ public class CompanyService {
             System.out.println("Email notification failed: " + e.getMessage());
         }
 
-        // Save in-app notification
         Notification n = new Notification();
         n.setUser(application.getStudent());
         n.setMessage("Your application for "
@@ -131,7 +149,10 @@ public class CompanyService {
     public ApplicationResponse scheduleInterview(String email,
                                                  Long applicationId,
                                                  LocalDateTime interviewDate) {
-        Company company = findCompany(email);
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        Company company = companyRepository.findByUserId(user.getId())
+                .orElseThrow(() -> new RuntimeException("Company not found"));
         Application application = applicationRepository.findById(applicationId)
                 .orElseThrow(() -> new RuntimeException("Application not found"));
 
@@ -143,7 +164,6 @@ public class CompanyService {
         application.setStatus(Application.AppStatus.interview_scheduled);
         applicationRepository.save(application);
 
-        // Send email notification
         try {
             emailService.sendApplicationStatusEmail(
                     application.getStudent().getEmail(),
@@ -166,21 +186,13 @@ public class CompanyService {
         return toApplicationResponse(application);
     }
 
-    // ── helpers ──────────────────────────────────────
-
-    private Company findCompany(String email) {
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-        return companyRepository.findByUserId(user.getId())
-                .orElseThrow(() -> new RuntimeException("Company profile not found"));
-    }
-
     private InternshipResponse toInternshipResponse(Internship i) {
         Company c = i.getCompany();
+        String deadline = i.getDeadline() != null ? i.getDeadline().toString() : null;
         return new InternshipResponse(
                 i.getId(), i.getTitle(), i.getDomain(), i.getLocation(),
                 i.getSkillsRequired(), i.getDescription(), i.getStipend(),
-                i.getDuration(), i.getDeadline(), i.getStatus().name(),
+                i.getDuration(), deadline, i.getStatus().name(),
                 c.getCompanyName(), c.getIndustry(),
                 c.getIsVerified(), i.getCreatedAt()
         );
