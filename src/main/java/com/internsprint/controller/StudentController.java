@@ -1,16 +1,17 @@
 package com.internsprint.controller;
 
-import com.internsprint.dto.*;
-import com.internsprint.service.CloudinaryService;
+import com.internsprint.dto.ApiResponse;
+import com.internsprint.dto.ApplicationRequest;
+import com.internsprint.dto.StudentProfileRequest;
 import com.internsprint.service.StudentService;
+import com.internsprint.service.CloudinaryService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-
-import java.security.Principal;
-
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/student")
