@@ -36,7 +36,6 @@ public class AuthService {
 
     @Transactional
     public AuthResponse register(RegisterRequest request) {
-
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new RuntimeException("Email already registered: " + request.getEmail());
         }
@@ -56,9 +55,8 @@ public class AuthService {
             StudentProfile profile = new StudentProfile();
             profile.setUser(user);
             studentProfileRepository.save(profile);
-
         } else if (request.getRole() == User.Role.company) {
-            if (request.getCompanyName() == null || request.getCompanyName().isBlank()) {
+            if (request.getCompanyName() == null || request.getCompanyName().isEmpty()) {
                 throw new RuntimeException("Company name is required");
             }
             Company company = new Company();
@@ -69,7 +67,6 @@ public class AuthService {
             companyRepository.save(company);
         }
 
-        // Send welcome email
         try {
             emailService.sendWelcomeEmail(request.getEmail(), request.getName());
         } catch (Exception e) {
@@ -95,16 +92,14 @@ public class AuthService {
         try {
             emailService.sendPasswordResetEmail(email, token);
         } catch (Exception e) {
-            // Log the full error so we can see it in Render logs
-            System.err.println("EMAIL ERROR: " + e.getClass().getName() + " - " + e.getMessage());
-            e.printStackTrace();
-            throw new RuntimeException("Email sending failed: " + e.getMessage());
+            System.err.println("Password reset email failed: " + e.getMessage());
+            throw new RuntimeException("Failed to send reset email: " + e.getMessage());
         }
     }
 
     public void resetPassword(String token, String newPassword) {
         User user = userRepository.findByResetToken(token)
-            .orElseThrow(() -> new RuntimeException("Invalid or expired token"));
+                .orElseThrow(() -> new RuntimeException("Invalid or expired token"));
 
         if (user.getResetTokenExpiry().isBefore(LocalDateTime.now())) {
             throw new RuntimeException("Reset token has expired");

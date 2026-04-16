@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -44,15 +45,15 @@ public class CompanyService {
         internship.setDescription(request.getDescription());
         internship.setStipend(request.getStipend());
         internship.setDuration(request.getDuration());
-        if (request.getDeadline() != null && !request.getDeadline().isBlank()) {
+        if (request.getDeadline() != null && !request.getDeadline().isEmpty()) {
             try {
-                internship.setDeadline(java.time.LocalDate.parse(request.getDeadline()));
+                internship.setDeadline(LocalDate.parse(request.getDeadline()));
             } catch (Exception e) {
                 // ignore invalid date
             }
         }
         internship = internshipRepository.save(internship);
-        return toInternshipResponse(internship);
+        return InternshipResponse.from(internship);
     }
 
     public List<InternshipResponse> getMyInternships(String email) {
@@ -62,7 +63,7 @@ public class CompanyService {
                 .orElseThrow(() -> new RuntimeException("Company not found"));
         return internshipRepository.findByCompanyId(company.getId())
                 .stream()
-                .map(this::toInternshipResponse)
+                .map(InternshipResponse::from)
                 .collect(Collectors.toList());
     }
 
@@ -81,7 +82,7 @@ public class CompanyService {
 
         internship.setStatus(Internship.Status.closed);
         internshipRepository.save(internship);
-        return toInternshipResponse(internship);
+        return InternshipResponse.from(internship);
     }
 
     public List<ApplicationResponse> getApplications(String email, Long internshipId) {
@@ -121,12 +122,10 @@ public class CompanyService {
         applicationRepository.save(application);
 
         try {
-            User student = application.getStudent();
-            Internship internship = application.getInternship();
             emailService.sendApplicationStatusEmail(
-                    student.getEmail(),
-                    student.getName(),
-                    internship.getTitle(),
+                    application.getStudent().getEmail(),
+                    application.getStudent().getName(),
+                    application.getInternship().getTitle(),
                     newStatus
             );
         } catch (Exception e) {
@@ -184,18 +183,6 @@ public class CompanyService {
         notificationRepository.save(n);
 
         return toApplicationResponse(application);
-    }
-
-    private InternshipResponse toInternshipResponse(Internship i) {
-        Company c = i.getCompany();
-        String deadline = i.getDeadline() != null ? i.getDeadline().toString() : null;
-        return new InternshipResponse(
-                i.getId(), i.getTitle(), i.getDomain(), i.getLocation(),
-                i.getSkillsRequired(), i.getDescription(), i.getStipend(),
-                i.getDuration(), deadline, i.getStatus().name(),
-                c.getCompanyName(), c.getIndustry(),
-                c.getIsVerified(), i.getCreatedAt()
-        );
     }
 
     private ApplicationResponse toApplicationResponse(Application a) {

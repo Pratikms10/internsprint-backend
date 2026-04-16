@@ -29,8 +29,7 @@ public class StudentService {
     }
 
     @Transactional
-    public StudentProfileResponse updateProfile(String email,
-                                                StudentProfileRequest request) {
+    public StudentProfileResponse updateProfile(String email, StudentProfileRequest request) {
         User user = findUser(email);
         StudentProfile profile = studentProfileRepository
                 .findByUserId(user.getId())
@@ -47,18 +46,24 @@ public class StudentService {
         profile.setGithub(request.getGithub());
         profile.setResumeUrl(request.getResumeUrl());
         profile.setProjects(request.getProjects());
-    profile.setCertifications(request.getCertifications());
+        profile.setCertifications(request.getCertifications());
 
         studentProfileRepository.save(profile);
-
         return toProfileResponse(user, profile);
     }
 
     @Transactional
-    public ApplicationResponse apply(String email, Long internshipId,
-                                     ApplicationRequest request) {
-        User student = findUser(email);
+    public void updateResumeUrl(String email, String url) {
+        User user = findUser(email);
+        StudentProfile profile = studentProfileRepository.findByUserId(user.getId())
+                .orElseThrow(() -> new RuntimeException("Profile not found"));
+        profile.setResumeUrl(url);
+        studentProfileRepository.save(profile);
+    }
 
+    @Transactional
+    public ApplicationResponse apply(String email, Long internshipId, ApplicationRequest request) {
+        User student = findUser(email);
         Internship internship = internshipRepository.findById(internshipId)
                 .orElseThrow(() -> new RuntimeException("Internship not found"));
 
@@ -66,8 +71,7 @@ public class StudentService {
             throw new RuntimeException("This internship is no longer accepting applications");
         }
 
-        if (applicationRepository.existsByStudentIdAndInternshipId(
-                student.getId(), internshipId)) {
+        if (applicationRepository.existsByStudentIdAndInternshipId(student.getId(), internshipId)) {
             throw new RuntimeException("You have already applied to this internship");
         }
 
@@ -77,8 +81,7 @@ public class StudentService {
         application.setCoverLetter(request.getCoverLetter());
         application = applicationRepository.save(application);
 
-        saveNotification(student,
-                "Application submitted for: " + internship.getTitle(),
+        saveNotification(student, "Application submitted for: " + internship.getTitle(),
                 Notification.NotifType.status_update);
 
         return toApplicationResponse(application);
@@ -94,17 +97,52 @@ public class StudentService {
 
     public List<Notification> getNotifications(String email) {
         User user = findUser(email);
-        return notificationRepository
-                .findByUserIdOrderByCreatedAtDesc(user.getId());
+        return notificationRepository.findByUserIdOrderByCreatedAtDesc(user.getId());
     }
 
     @Transactional
     public void markNotificationsRead(String email) {
         User user = findUser(email);
-        List<Notification> unread = notificationRepository
-                .findByUserIdAndIsRead(user.getId(), false);
+        List<Notification> unread = notificationRepository.findByUserIdAndIsRead(user.getId(), false);
         unread.forEach(n -> n.setIsRead(true));
         notificationRepository.saveAll(unread);
+    }
+
+    public void saveInternship(String email, Long internshipId) {
+        User user = findUser(email);
+        Internship internship = internshipRepository.findById(internshipId)
+                .orElseThrow(() -> new RuntimeException("Internship not found"));
+        if (!savedInternshipRepository.existsByStudentAndInternship(user, internship)) {
+            SavedInternship saved = new SavedInternship();
+            saved.setStudent(user);
+            saved.setInternship(internship);
+            savedInternshipRepository.save(saved);
+        }
+    }
+
+    public void unsaveInternship(String email, Long internshipId) {
+        User user = findUser(email);
+        Internship internship = internshipRepository.findById(internshipId)
+                .orElseThrow(() -> new RuntimeException("Internship not found"));
+        savedInternshipRepository.deleteByStudentAndInternship(user, internship);
+    }
+
+    public List<InternshipResponse> getSavedInternships(String email) {
+        User user = findUser(email);
+        return savedInternshipRepository.findByStudent(user)
+                .stream()
+                .map(s -> InternshipResponse.from(s.getInternship()))
+                .collect(Collectors.toList());
+    }
+
+    public void withdrawApplication(String email, Long applicationId) {
+        User user = findUser(email);
+        Application application = applicationRepository.findById(applicationId)
+                .orElseThrow(() -> new RuntimeException("Application not found"));
+        if (!application.getStudent().getId().equals(user.getId())) {
+            throw new RuntimeException("Unauthorized");
+        }
+        applicationRepository.delete(application);
     }
 
     // ── helpers ──────────────────────────────────────
@@ -114,8 +152,7 @@ public class StudentService {
                 .orElseThrow(() -> new RuntimeException("User not found"));
     }
 
-    private void saveNotification(User user, String message,
-                                  Notification.NotifType type) {
+    private void saveNotification(User user, String message, Notification.NotifType type) {
         Notification n = new Notification();
         n.setUser(user);
         n.setMessage(message);
@@ -123,13 +160,13 @@ public class StudentService {
         notificationRepository.save(n);
     }
 
-    private StudentProfileResponse toProfileResponse(User user,
-                                                     StudentProfile p) {
+    private StudentProfileResponse toProfileResponse(User user, StudentProfile p) {
         return new StudentProfileResponse(
                 user.getId(), user.getName(), user.getEmail(),
                 p.getCollege(), p.getDegree(), p.getYear(), p.getCgpa(),
                 p.getSkills(), p.getBio(), p.getLinkedin(),
-                p.getGithub(), p.getResumeUrl()
+                p.getGithub(), p.getResumeUrl(),
+                p.getProjects(), p.getCertifications()
         );
     }
 
@@ -145,58 +182,5 @@ public class StudentService {
                 a.getAppliedAt(),
                 a.getUpdatedAt()
         );
-    }
-        // Save internship
-    public void saveInternship(String email, Long internshipId) {
-        User user = userRepository.findByEmail(email)
-            .orElseThrow(() -> new RuntimeException("User not found"));
-        Internship internship = internshipRepository.findById(internshipId)
-            .orElseThrow(() -> new RuntimeException("Internship not found"));
-        if (!savedInternshipRepository.existsByStudentAndInternship(user, internship)) {
-            SavedInternship saved = new SavedInternship();
-            saved.setStudent(user);
-            saved.setInternship(internship);
-            savedInternshipRepository.save(saved);
-        }
-    }
-
-    // Unsave internship
-    public void unsaveInternship(String email, Long internshipId) {
-        User user = userRepository.findByEmail(email)
-            .orElseThrow(() -> new RuntimeException("User not found"));
-        Internship internship = internshipRepository.findById(internshipId)
-            .orElseThrow(() -> new RuntimeException("Internship not found"));
-        savedInternshipRepository.deleteByStudentAndInternship(user, internship);
-    }
-
-    // Get saved internships
-    public List<InternshipResponse> getSavedInternships(String email) {
-        User user = userRepository.findByEmail(email)
-            .orElseThrow(() -> new RuntimeException("User not found"));
-        return savedInternshipRepository.findByStudent(user)
-            .stream()
-            .map(s -> InternshipResponse.from(s.getInternship()))
-            .collect(Collectors.toList());
-    }
-
-    // Withdraw application
-    public void withdrawApplication(String email, Long applicationId) {
-        User user = userRepository.findByEmail(email)
-            .orElseThrow(() -> new RuntimeException("User not found"));
-        Application application = applicationRepository.findById(applicationId)
-            .orElseThrow(() -> new RuntimeException("Application not found"));
-        if (!application.getStudent().getId().equals(user.getId())) {
-            throw new RuntimeException("Unauthorized");
-        }
-        applicationRepository.delete(application);
-    }
-
-    public void updateResumeUrl(String email, String url) {
-        User user = userRepository.findByEmail(email)
-            .orElseThrow(() -> new RuntimeException("User not found"));
-        StudentProfile profile = studentProfileRepository.findByUserId(user.getId())
-            .orElseThrow(() -> new RuntimeException("Profile not found"));
-        profile.setResumeUrl(url);
-        studentProfileRepository.save(profile);
     }
 }
