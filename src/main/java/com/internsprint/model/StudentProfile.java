@@ -3,9 +3,6 @@ package com.internsprint.model;
 import lombok.Getter;
 import lombok.Setter;
 
-@Getter
-@Setter
-
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -15,6 +12,8 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "student_profiles")
 @Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 public class StudentProfile {
