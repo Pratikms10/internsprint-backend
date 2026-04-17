@@ -1,10 +1,17 @@
 package com.internsprint.model;
 
+import lombok.Getter;
+import lombok.Setter;
+
+@Getter
+@Setter
+
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 import java.time.LocalDateTime;
+
 
 @Entity
 @Table(name = "users")
@@ -38,6 +45,13 @@ public class User {
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+
+    @Column(name = "reset_token")
+    private String resetToken;
+
+    @Column(name = "reset_token_expiry")
+    private LocalDateTime resetTokenExpiry;
 
     @PrePersist
     protected void onCreate() {

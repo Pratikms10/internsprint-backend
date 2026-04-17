@@ -1,7 +1,6 @@
 package com.internsprint.service;
 
 import com.internsprint.dto.InternshipResponse;
-import com.internsprint.model.Company;
 import com.internsprint.model.Internship;
 import com.internsprint.repository.InternshipRepository;
 import lombok.RequiredArgsConstructor;
@@ -36,24 +35,13 @@ public class InternshipService {
         }
 
         return results.stream()
-                .map(this::toResponse)
+                .map(InternshipResponse::from)
                 .collect(Collectors.toList());
     }
 
     public InternshipResponse getById(Long id) {
         Internship internship = internshipRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Internship not found"));
-        return toResponse(internship);
-    }
-
-    public InternshipResponse toResponse(Internship i) {
-        Company c = i.getCompany();
-        return new InternshipResponse(
-                i.getId(), i.getTitle(), i.getDomain(), i.getLocation(),
-                i.getSkillsRequired(), i.getDescription(), i.getStipend(),
-                i.getDuration(), i.getDeadline(), i.getStatus().name(),
-                c.getCompanyName(), c.getIndustry(),
-                c.getIsVerified(), i.getCreatedAt()
-        );
+        return InternshipResponse.from(internship);
     }
 }

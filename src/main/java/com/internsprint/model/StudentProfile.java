@@ -1,5 +1,11 @@
 package com.internsprint.model;
 
+import lombok.Getter;
+import lombok.Setter;
+
+@Getter
+@Setter
+
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -52,6 +58,12 @@ public class StudentProfile {
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    @Column(columnDefinition = "TEXT")
+    private String projects;
+
+    @Column(columnDefinition = "TEXT")  
+    private String certifications;
 
     @PrePersist
     protected void onCreate() { createdAt = updatedAt = LocalDateTime.now(); }
