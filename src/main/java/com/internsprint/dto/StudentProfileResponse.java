@@ -20,4 +20,6 @@ public class StudentProfileResponse {
     private String linkedin;
     private String github;
     private String resumeUrl;
+    private String projects;
+    private String certifications;
 }

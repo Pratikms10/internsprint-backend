@@ -45,12 +45,8 @@ public class CompanyService {
         internship.setDescription(request.getDescription());
         internship.setStipend(request.getStipend());
         internship.setDuration(request.getDuration());
-        if (request.getDeadline() != null && !request.getDeadline().isEmpty()) {
-            try {
-                internship.setDeadline(LocalDate.parse(request.getDeadline()));
-            } catch (Exception e) {
-                // ignore invalid date
-            }
+        if (request.getDeadline() != null) {
+            internship.setDeadline(request.getDeadline());
         }
         internship = internshipRepository.save(internship);
         return InternshipResponse.from(internship);
