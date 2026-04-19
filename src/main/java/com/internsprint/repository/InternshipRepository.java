@@ -1,31 +1,20 @@
 package com.internsprint.repository;
 
-import java.time.LocalDate;
 import com.internsprint.model.Internship;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
-import java.util.List;
 
+import java.time.LocalDate;
+import java.util.List;
 
 @Repository
 public interface InternshipRepository extends JpaRepository<Internship, Long> {
-
     List<Internship> findByStatus(Internship.Status status);
-
-    List<Internship> findByStatusAndDomainContainingIgnoreCase(
-            Internship.Status status, String domain);
-
-    List<Internship> findByStatusAndLocationContainingIgnoreCase(
-            Internship.Status status, String location);
-
-    List<Internship> findByStatusAndDeadlineBetween(
-            Internship.Status status, String startDate, String endDate);
-
+    List<Internship> findByStatusAndDomainContainingIgnoreCase(Internship.Status status, String domain);
+    List<Internship> findByStatusAndLocationContainingIgnoreCase(Internship.Status status, String location);
     List<Internship> findByStatusAndDeadlineBetween(Internship.Status status, LocalDate startDate, LocalDate endDate);
-
-
     List<Internship> findByCompanyId(Long companyId);
 
     @Query("SELECT i FROM Internship i WHERE i.status = 'open' AND " +
