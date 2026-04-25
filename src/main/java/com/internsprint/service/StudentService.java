@@ -126,7 +126,7 @@ public class StudentService {
                 .orElseThrow(() -> new RuntimeException("Internship not found"));
         savedInternshipRepository.deleteByStudentAndInternship(user, internship);
     }
-
+    @Transactional
     public List<InternshipResponse> getSavedInternships(String email) {
         User user = findUser(email);
         return savedInternshipRepository.findByStudent(user)
