@@ -81,6 +81,7 @@ public class CompanyService {
         return InternshipResponse.from(internship);
     }
 
+    @Transactional
     public List<ApplicationResponse> getApplications(String email, Long internshipId) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
@@ -181,7 +182,10 @@ public class CompanyService {
         return toApplicationResponse(application);
     }
 
+    @Transactional
     private ApplicationResponse toApplicationResponse(Application a) {
+        StudentProfile sp = a.getStudent().getStudentProfile();
+
         return new ApplicationResponse(
                 a.getId(),
                 a.getInternship().getId(),
@@ -191,7 +195,19 @@ public class CompanyService {
                 a.getCoverLetter(),
                 a.getInterviewDate(),
                 a.getAppliedAt(),
-                a.getUpdatedAt()
+                a.getUpdatedAt(),
+                // Student info
+                a.getStudent().getId(),
+                a.getStudent().getName(),
+                a.getStudent().getEmail(),
+                sp != null ? sp.getCollege() : null,
+                sp != null ? sp.getDegree() : null,
+                sp != null && sp.getCgpa() != null ? sp.getCgpa().toString() : null,
+                sp != null ? sp.getSkills() : null,
+                sp != null ? sp.getBio() : null,
+                sp != null ? sp.getResumeUrl() : null,
+                sp != null ? sp.getLinkedin() : null,
+                sp != null ? sp.getGithub() : null
         );
     }
 }

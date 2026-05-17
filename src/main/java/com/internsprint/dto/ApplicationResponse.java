@@ -19,4 +19,17 @@ public class ApplicationResponse {
     private LocalDateTime interviewDate;
     private LocalDateTime appliedAt;
     private LocalDateTime updatedAt;
+
+    // Student info
+    private Long studentId;
+    private String studentName;
+    private String studentEmail;
+    private String studentCollege;
+    private String studentDegree;
+    private String studentCgpa;
+    private String studentSkills;
+    private String studentBio;
+    private String resumeUrl;
+    private String studentLinkedin;
+    private String studentGithub;
 }
