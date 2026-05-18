@@ -126,6 +126,7 @@ public class StudentService {
                 .orElseThrow(() -> new RuntimeException("Internship not found"));
         savedInternshipRepository.deleteByStudentAndInternship(user, internship);
     }
+
     @Transactional
     public List<InternshipResponse> getSavedInternships(String email) {
         User user = findUser(email);
@@ -144,8 +145,6 @@ public class StudentService {
         }
         applicationRepository.delete(application);
     }
-
-    // ── helpers ──────────────────────────────────────
 
     private User findUser(String email) {
         return userRepository.findByEmail(email)
@@ -180,7 +179,8 @@ public class StudentService {
                 a.getCoverLetter(),
                 a.getInterviewDate(),
                 a.getAppliedAt(),
-                a.getUpdatedAt()
+                a.getUpdatedAt(),
+                null, null, null, null, null, null, null, null, null, null, null
         );
     }
 }

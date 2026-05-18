@@ -7,7 +7,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -22,6 +21,7 @@ public class CompanyService {
     private final ApplicationRepository applicationRepository;
     private final NotificationRepository notificationRepository;
     private final EmailService emailService;
+    private final StudentProfileRepository studentProfileRepository;
 
     @Transactional
     public InternshipResponse postInternship(String email, InternshipRequest request) {
@@ -182,9 +182,10 @@ public class CompanyService {
         return toApplicationResponse(application);
     }
 
-    @Transactional
     private ApplicationResponse toApplicationResponse(Application a) {
-        StudentProfile sp = a.getStudent().getStudentProfile();
+        StudentProfile sp = studentProfileRepository
+                .findByUserId(a.getStudent().getId())
+                .orElse(null);
 
         return new ApplicationResponse(
                 a.getId(),
