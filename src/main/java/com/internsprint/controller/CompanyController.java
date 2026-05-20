@@ -19,6 +19,24 @@ public class CompanyController {
 
     private final CompanyService companyService;
 
+    // ── Profile ──────────────────────────────────────────────────────────────
+
+    @GetMapping("/profile")
+    public ResponseEntity<ApiResponse> getProfile(Principal principal) {
+        return ResponseEntity.ok(ApiResponse.ok("Profile fetched",
+                companyService.getProfile(principal.getName())));
+    }
+
+    @PutMapping("/profile")
+    public ResponseEntity<ApiResponse> updateProfile(
+            Principal principal,
+            @RequestBody CompanyProfileRequest request) {
+        return ResponseEntity.ok(ApiResponse.ok("Profile updated",
+                companyService.updateProfile(principal.getName(), request)));
+    }
+
+    // ── Internships ──────────────────────────────────────────────────────────
+
     @PostMapping("/internships")
     public ResponseEntity<ApiResponse> postInternship(
             Principal principal,
@@ -48,6 +66,8 @@ public class CompanyController {
         return ResponseEntity.ok(ApiResponse.ok("Applications fetched",
                 companyService.getApplications(principal.getName(), id)));
     }
+
+    // ── Applications ─────────────────────────────────────────────────────────
 
     @PutMapping("/applications/{id}/status")
     public ResponseEntity<ApiResponse> updateStatus(

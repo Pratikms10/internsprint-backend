@@ -23,6 +23,46 @@ public class CompanyService {
     private final EmailService emailService;
     private final StudentProfileRepository studentProfileRepository;
 
+    // ── Company Profile ──────────────────────────────────────────────────────
+
+    public CompanyProfileResponse getProfile(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        Company company = companyRepository.findByUserId(user.getId())
+                .orElseThrow(() -> new RuntimeException("Company not found"));
+        return toProfileResponse(user, company);
+    }
+
+    @Transactional
+    public CompanyProfileResponse updateProfile(String email, CompanyProfileRequest request) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        Company company = companyRepository.findByUserId(user.getId())
+                .orElseThrow(() -> new RuntimeException("Company not found"));
+
+        if (request.getCompanyName() != null) company.setCompanyName(request.getCompanyName());
+        if (request.getWebsite()     != null) company.setWebsite(request.getWebsite());
+        if (request.getIndustry()    != null) company.setIndustry(request.getIndustry());
+        if (request.getDescription() != null) company.setDescription(request.getDescription());
+        if (request.getGstin()       != null) company.setGstin(request.getGstin());
+        if (request.getLocation()    != null) company.setLocation(request.getLocation());
+        if (request.getLogoUrl()     != null) company.setLogoUrl(request.getLogoUrl());
+
+        companyRepository.save(company);
+        return toProfileResponse(user, company);
+    }
+
+    private CompanyProfileResponse toProfileResponse(User user, Company c) {
+        return new CompanyProfileResponse(
+                c.getId(), user.getId(), user.getName(), user.getEmail(),
+                c.getCompanyName(), c.getWebsite(), c.getIndustry(),
+                c.getDescription(), c.getIsVerified(),
+                c.getGstin(), c.getLocation(), c.getLogoUrl()
+        );
+    }
+
+    // ── Internships ──────────────────────────────────────────────────────────
+
     @Transactional
     public InternshipResponse postInternship(String email, InternshipRequest request) {
         User user = userRepository.findByEmail(email)
@@ -80,6 +120,8 @@ public class CompanyService {
         internshipRepository.save(internship);
         return InternshipResponse.from(internship);
     }
+
+    // ── Applications ─────────────────────────────────────────────────────────
 
     @Transactional
     public List<ApplicationResponse> getApplications(String email, Long internshipId) {
@@ -197,7 +239,6 @@ public class CompanyService {
                 a.getInterviewDate(),
                 a.getAppliedAt(),
                 a.getUpdatedAt(),
-                // Student info
                 a.getStudent().getId(),
                 a.getStudent().getName(),
                 a.getStudent().getEmail(),

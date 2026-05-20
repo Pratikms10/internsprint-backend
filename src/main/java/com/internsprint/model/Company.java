@@ -45,6 +45,15 @@ public class Company {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    @Column(name = "gstin", length = 15)
+    private String gstin;
+
+    @Column(name = "location", length = 200)
+    private String location;
+
+    @Column(name = "logo_url", length = 500)
+    private String logoUrl;
+
     @PrePersist
     protected void onCreate() { createdAt = updatedAt = LocalDateTime.now(); }
 
