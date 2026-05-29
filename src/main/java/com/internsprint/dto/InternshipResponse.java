@@ -24,6 +24,12 @@ public class InternshipResponse {
     private String companyIndustry;
     private Boolean companyVerified;
     private LocalDateTime createdAt;
+    // Company profile fields — visible to all (students, admin, public)
+    private Long companyId;
+    private String companyLocation;
+    private String companyWebsite;
+    private String companyLogoUrl;
+    private String companyDescription;
 
     public static InternshipResponse from(Internship i) {
         return new InternshipResponse(
@@ -40,7 +46,13 @@ public class InternshipResponse {
             i.getCompany().getCompanyName(),
             i.getCompany().getIndustry(),
             i.getCompany().getIsVerified(),
-            i.getCreatedAt()
+            i.getCreatedAt(),
+            // New company profile fields
+            i.getCompany().getId(),
+            i.getCompany().getLocation(),
+            i.getCompany().getWebsite(),
+            i.getCompany().getLogoUrl(),
+            i.getCompany().getDescription()
         );
     }
 }
