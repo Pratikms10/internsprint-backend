@@ -23,7 +23,7 @@ public class CompanyService {
     private final EmailService emailService;
     private final StudentProfileRepository studentProfileRepository;
 
-    // ── Company Profile ──────────────────────────────────────────────────────
+    // ── Company Profile ────────────────────────────────────────
 
     public CompanyProfileResponse getProfile(String email) {
         User user = userRepository.findByEmail(email)
@@ -34,34 +34,46 @@ public class CompanyService {
     }
 
     @Transactional
-    public CompanyProfileResponse updateProfile(String email, CompanyProfileRequest request) {
+    public CompanyProfileResponse updateProfile(String email, CompanyProfileRequest req) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
         Company company = companyRepository.findByUserId(user.getId())
                 .orElseThrow(() -> new RuntimeException("Company not found"));
 
-        if (request.getCompanyName() != null) company.setCompanyName(request.getCompanyName());
-        if (request.getWebsite()     != null) company.setWebsite(request.getWebsite());
-        if (request.getIndustry()    != null) company.setIndustry(request.getIndustry());
-        if (request.getDescription() != null) company.setDescription(request.getDescription());
-        if (request.getGstin()       != null) company.setGstin(request.getGstin());
-        if (request.getLocation()    != null) company.setLocation(request.getLocation());
-        if (request.getLogoUrl()     != null) company.setLogoUrl(request.getLogoUrl());
+        if (req.getCompanyName()  != null) company.setCompanyName(req.getCompanyName());
+        if (req.getWebsite()      != null) company.setWebsite(req.getWebsite());
+        if (req.getIndustry()     != null) company.setIndustry(req.getIndustry());
+        if (req.getDescription()  != null) company.setDescription(req.getDescription());
+        if (req.getGstin()        != null) company.setGstin(req.getGstin());
+        if (req.getLocation()     != null) company.setLocation(req.getLocation());
+        if (req.getLogoUrl()      != null) company.setLogoUrl(req.getLogoUrl());
+        if (req.getCin()          != null) company.setCin(req.getCin());
+        if (req.getPan()          != null) company.setPan(req.getPan());
+        if (req.getPhone()        != null) company.setPhone(req.getPhone());
+        if (req.getLinkedinUrl()  != null) company.setLinkedinUrl(req.getLinkedinUrl());
+        if (req.getCompanyType()  != null) company.setCompanyType(req.getCompanyType());
+        if (req.getFoundedYear()  != null) company.setFoundedYear(req.getFoundedYear());
+        if (req.getCompanySize()  != null) company.setCompanySize(req.getCompanySize());
+        if (req.getTagline()      != null) company.setTagline(req.getTagline());
+        if (req.getPerks()        != null) company.setPerks(req.getPerks());
 
         companyRepository.save(company);
         return toProfileResponse(user, company);
     }
 
-    private CompanyProfileResponse toProfileResponse(User user, Company c) {
+    public CompanyProfileResponse toProfileResponse(User user, Company c) {
         return new CompanyProfileResponse(
                 c.getId(), user.getId(), user.getName(), user.getEmail(),
                 c.getCompanyName(), c.getWebsite(), c.getIndustry(),
                 c.getDescription(), c.getIsVerified(),
-                c.getGstin(), c.getLocation(), c.getLogoUrl()
+                c.getGstin(), c.getLocation(), c.getLogoUrl(),
+                c.getCin(), c.getPan(), c.getPhone(), c.getLinkedinUrl(),
+                c.getCompanyType(), c.getFoundedYear(), c.getCompanySize(),
+                c.getTagline(), c.getPerks()
         );
     }
 
-    // ── Internships ──────────────────────────────────────────────────────────
+    // ── Internships ────────────────────────────────────────────
 
     @Transactional
     public InternshipResponse postInternship(String email, InternshipRequest request) {
@@ -72,8 +84,7 @@ public class CompanyService {
 
         if (!company.getIsVerified()) {
             throw new RuntimeException(
-                    "Your company is pending verification. " +
-                    "Please wait for admin approval before posting internships.");
+                "Your company is pending verification. Please wait for admin approval.");
         }
 
         Internship internship = new Internship();
@@ -85,9 +96,7 @@ public class CompanyService {
         internship.setDescription(request.getDescription());
         internship.setStipend(request.getStipend());
         internship.setDuration(request.getDuration());
-        if (request.getDeadline() != null) {
-            internship.setDeadline(request.getDeadline());
-        }
+        if (request.getDeadline() != null) internship.setDeadline(request.getDeadline());
         internship = internshipRepository.save(internship);
         return InternshipResponse.from(internship);
     }
@@ -98,9 +107,7 @@ public class CompanyService {
         Company company = companyRepository.findByUserId(user.getId())
                 .orElseThrow(() -> new RuntimeException("Company not found"));
         return internshipRepository.findByCompanyId(company.getId())
-                .stream()
-                .map(InternshipResponse::from)
-                .collect(Collectors.toList());
+                .stream().map(InternshipResponse::from).collect(Collectors.toList());
     }
 
     @Transactional
@@ -111,17 +118,14 @@ public class CompanyService {
                 .orElseThrow(() -> new RuntimeException("Company not found"));
         Internship internship = internshipRepository.findById(internshipId)
                 .orElseThrow(() -> new RuntimeException("Internship not found"));
-
-        if (!internship.getCompany().getId().equals(company.getId())) {
+        if (!internship.getCompany().getId().equals(company.getId()))
             throw new RuntimeException("Access denied");
-        }
-
         internship.setStatus(Internship.Status.closed);
         internshipRepository.save(internship);
         return InternshipResponse.from(internship);
     }
 
-    // ── Applications ─────────────────────────────────────────────────────────
+    // ── Applications ───────────────────────────────────────────
 
     @Transactional
     public List<ApplicationResponse> getApplications(String email, Long internshipId) {
@@ -131,31 +135,22 @@ public class CompanyService {
                 .orElseThrow(() -> new RuntimeException("Company not found"));
         Internship internship = internshipRepository.findById(internshipId)
                 .orElseThrow(() -> new RuntimeException("Internship not found"));
-
-        if (!internship.getCompany().getId().equals(company.getId())) {
+        if (!internship.getCompany().getId().equals(company.getId()))
             throw new RuntimeException("Access denied");
-        }
-
         return applicationRepository.findByInternshipId(internshipId)
-                .stream()
-                .map(this::toApplicationResponse)
-                .collect(Collectors.toList());
+                .stream().map(this::toApplicationResponse).collect(Collectors.toList());
     }
 
     @Transactional
-    public ApplicationResponse updateApplicationStatus(String email,
-                                                       Long applicationId,
-                                                       String newStatus) {
+    public ApplicationResponse updateApplicationStatus(String email, Long applicationId, String newStatus) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
         Company company = companyRepository.findByUserId(user.getId())
                 .orElseThrow(() -> new RuntimeException("Company not found"));
         Application application = applicationRepository.findById(applicationId)
                 .orElseThrow(() -> new RuntimeException("Application not found"));
-
-        if (!application.getInternship().getCompany().getId().equals(company.getId())) {
+        if (!application.getInternship().getCompany().getId().equals(company.getId()))
             throw new RuntimeException("Access denied");
-        }
 
         application.setStatus(Application.AppStatus.valueOf(newStatus));
         applicationRepository.save(application);
@@ -164,39 +159,29 @@ public class CompanyService {
             emailService.sendApplicationStatusEmail(
                     application.getStudent().getEmail(),
                     application.getStudent().getName(),
-                    application.getInternship().getTitle(),
-                    newStatus
-            );
-        } catch (Exception e) {
-            System.out.println("Email notification failed: " + e.getMessage());
-        }
+                    application.getInternship().getTitle(), newStatus);
+        } catch (Exception e) { System.out.println("Email failed: " + e.getMessage()); }
 
         Notification n = new Notification();
         n.setUser(application.getStudent());
-        n.setMessage("Your application for "
-                + application.getInternship().getTitle()
+        n.setMessage("Your application for " + application.getInternship().getTitle()
                 + " at " + company.getCompanyName()
                 + " is now: " + newStatus.replace("_", " "));
         n.setType(Notification.NotifType.status_update);
         notificationRepository.save(n);
-
         return toApplicationResponse(application);
     }
 
     @Transactional
-    public ApplicationResponse scheduleInterview(String email,
-                                                 Long applicationId,
-                                                 LocalDateTime interviewDate) {
+    public ApplicationResponse scheduleInterview(String email, Long applicationId, LocalDateTime interviewDate) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
         Company company = companyRepository.findByUserId(user.getId())
                 .orElseThrow(() -> new RuntimeException("Company not found"));
         Application application = applicationRepository.findById(applicationId)
                 .orElseThrow(() -> new RuntimeException("Application not found"));
-
-        if (!application.getInternship().getCompany().getId().equals(company.getId())) {
+        if (!application.getInternship().getCompany().getId().equals(company.getId()))
             throw new RuntimeException("Access denied");
-        }
 
         application.setInterviewDate(interviewDate);
         application.setStatus(Application.AppStatus.interview_scheduled);
@@ -206,42 +191,27 @@ public class CompanyService {
             emailService.sendApplicationStatusEmail(
                     application.getStudent().getEmail(),
                     application.getStudent().getName(),
-                    application.getInternship().getTitle(),
-                    "interview_scheduled"
-            );
-        } catch (Exception e) {
-            System.out.println("Interview email failed: " + e.getMessage());
-        }
+                    application.getInternship().getTitle(), "interview_scheduled");
+        } catch (Exception e) { System.out.println("Interview email failed: " + e.getMessage()); }
 
         Notification n = new Notification();
         n.setUser(application.getStudent());
-        n.setMessage("Interview scheduled for "
-                + application.getInternship().getTitle()
+        n.setMessage("Interview scheduled for " + application.getInternship().getTitle()
                 + " on " + interviewDate);
         n.setType(Notification.NotifType.interview);
         notificationRepository.save(n);
-
         return toApplicationResponse(application);
     }
 
     private ApplicationResponse toApplicationResponse(Application a) {
         StudentProfile sp = studentProfileRepository
-                .findByUserId(a.getStudent().getId())
-                .orElse(null);
-
+                .findByUserId(a.getStudent().getId()).orElse(null);
         return new ApplicationResponse(
-                a.getId(),
-                a.getInternship().getId(),
-                a.getInternship().getTitle(),
+                a.getId(), a.getInternship().getId(), a.getInternship().getTitle(),
                 a.getInternship().getCompany().getCompanyName(),
-                a.getStatus(),
-                a.getCoverLetter(),
-                a.getInterviewDate(),
-                a.getAppliedAt(),
-                a.getUpdatedAt(),
-                a.getStudent().getId(),
-                a.getStudent().getName(),
-                a.getStudent().getEmail(),
+                a.getStatus(), a.getCoverLetter(), a.getInterviewDate(),
+                a.getAppliedAt(), a.getUpdatedAt(),
+                a.getStudent().getId(), a.getStudent().getName(), a.getStudent().getEmail(),
                 sp != null ? sp.getCollege() : null,
                 sp != null ? sp.getDegree() : null,
                 sp != null && sp.getCgpa() != null ? sp.getCgpa().toString() : null,

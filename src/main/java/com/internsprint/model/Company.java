@@ -45,6 +45,7 @@ public class Company {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    // Existing fields
     @Column(name = "gstin", length = 15)
     private String gstin;
 
@@ -53,6 +54,34 @@ public class Company {
 
     @Column(name = "logo_url", length = 500)
     private String logoUrl;
+
+    // New industry-standard fields
+    @Column(name = "cin", length = 21)
+    private String cin;
+
+    @Column(name = "pan", length = 10)
+    private String pan;
+
+    @Column(name = "phone", length = 15)
+    private String phone;
+
+    @Column(name = "linkedin_url", length = 300)
+    private String linkedinUrl;
+
+    @Column(name = "company_type", length = 50)
+    private String companyType;
+
+    @Column(name = "founded_year", length = 4)
+    private String foundedYear;
+
+    @Column(name = "company_size", length = 30)
+    private String companySize;
+
+    @Column(name = "tagline", length = 200)
+    private String tagline;
+
+    @Column(name = "perks", columnDefinition = "TEXT")
+    private String perks;
 
     @PrePersist
     protected void onCreate() { createdAt = updatedAt = LocalDateTime.now(); }
